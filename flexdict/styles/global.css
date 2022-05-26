@@ -1,0 +1,38 @@
+h1 {
+  font-size: 40px !important;
+  font-family: 'PT Serif Caption', serif !important;
+}
+
+h2 {
+  font-size: 32px !important;
+  font-family: 'PT Serif Caption', serif !important;
+}
+
+h3 {
+  font-size: 28px !important;
+  font-family: 'PT Serif Caption', serif !important;
+}
+
+h4 {
+  font-size: 20px !important;
+  font-family: 'PT Serif Caption', serif !important;
+}
+
+h5 {
+  font-size: 16px !important;
+  font-family: 'PT Serif Caption', serif !important;
+}
+
+h6 {
+  font-size: 12px !important;
+  font-family: 'PT Serif Caption', serif !important;
+}
+
+p {
+  font-size: 12px !important;
+  font-family: 'Otomanopee One', sans-serif !important;
+}
+
+.input-border {
+  border: 1px solid #3a3a3a !important;
+}
