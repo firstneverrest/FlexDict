@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/gofiber/fiber/v2"
-)
+	"os"
 
-const portNumber = "8000"
+	"github.com/gofiber/fiber/v2"
+	"github.com/joho/godotenv"
+)
 
 func main() {
 	app := fiber.New()
@@ -16,5 +17,12 @@ func main() {
 	CorsHandler(app)
 	Logger(app)
 
-	app.Listen(":" + portNumber)
+	err := godotenv.Load()
+	if err != nil {
+		panic("Error loading .env file")
+	}
+
+	port := os.Getenv("PORT")
+
+	app.Listen(":" + port)
 }
