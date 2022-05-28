@@ -8,6 +8,8 @@ services:
       dockerfile: auth.Dockerfile
     ports:
       - '8080:8080'
+    depends_on:
+      - mysql
   mysql:
     image: mysql:5.7
     container_name: firstneverrest_mysql
@@ -17,6 +19,3 @@ services:
       - '8081:3306'
     environment:
       MYSQL_ROOT_PASSWORD: 'root'
-    restart: always
-    networks:
-      - default
