@@ -2,11 +2,11 @@ FROM golang:1.18-alpine
 
 WORKDIR /app
 
-COPY go.mod .
-COPY go.sum .
+COPY ./auth/go.mod .
+COPY ./auth/go.sum .
 RUN go mod download
 
-COPY . .
+COPY ./auth .
 
 RUN go build -o ./bin/auth ./cmd/*.go
 

@@ -14,7 +14,7 @@ services:
     image: mysql:5.7
     container_name: firstneverrest_mysql
     volumes:
-      - ./data/mysql:/var/lib/mysql
+      - ./auth/data/mysql:/var/lib/mysql
     ports:
       - '8081:3306'
     environment:
