@@ -1,62 +1,49 @@
 package main
 
 import (
+	"fmt"
+	"log"
+	"os"
+
+	"database/sql"
+
+	// "github.com/firstneverrest/auth/internal/handlers"
+	"github.com/firstneverrest/auth/internal/models"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/joho/godotenv"
 )
+
+var DB *sql.DB
 
 func main() {
 	app := fiber.New()
 
-	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-		AllowMethods: "GET, POST, PUT, DELETE",
-	}))
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 
-	// add logging
-	app.Use(logger.New(logger.Config{
-		TimeZone: "Asia/Bangkok",
-	}))
+	port := os.Getenv("PORT")
 
-	// Group
-	v1 := app.Group("/v1", func(c *fiber.Ctx) error {
-		c.Set("Version", "1.0.0")
-		return c.Next()
-	})
-	v1.Get("/user/:id", UserProfile)
-	v1.Post("/signup", Signup)
-	v1.Post("/signin", Signin)
-	v1.Post("/signout", Signout)
+	// mysql
+	db, err := sql.Open("mysql", "root:root@tcp(mysql:3306)/flexdict")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	v1.Get("/env", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"Version":    c.Get("Version"),
-			"BaseURL":    c.BaseURL(),
-			"Hostname":   c.Hostname(),
-			"IP":         c.IP(),
-			"IPs":        c.IPs(),
-			"Protocol":   c.Protocol(),
-			"Subdomains": c.Subdomains(),
-		})
-	})
+	models.DB = db
+	fmt.Println("Connected to database")
 
-	app.Listen(":8000")
-}
+	defer db.Close()
 
-func Signup(c *fiber.Ctx) error {
-	return c.SendString("Signup")
-}
+	// routes
+	Routes(app)
 
-func Signin(c *fiber.Ctx) error {
-	return c.SendString("Signin")
-}
+	// middleware
+	CorsHandler(app)
+	// JwtWare("/user/:id/vocab", handlers.GetJWTSecret(), app)
+	Logger(app)
 
-func Signout(c *fiber.Ctx) error {
-	return c.SendString("Signout")
-}
-
-func UserProfile(c *fiber.Ctx) error {
-	id := c.Params("id")
-	return c.SendString("UserProfile: " + id)
+	app.Listen(":" + port)
 }

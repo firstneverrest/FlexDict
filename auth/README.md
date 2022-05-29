@@ -1,5 +1,16 @@
 # Auth service
 
+## Technology
+
+### Auth service
+
+- mysql
+- Go
+
+### FlexDict service
+
+### Vocabulary service
+
 ## Installation
 
 ```bash
@@ -19,9 +30,10 @@ go run cmd/*.go
 ## Send Request with cURL
 
 ```
-# GET
-curl localhost:8000/user -i
+#  Sign up
+curl http://localhost:8000/v1/signup -d '{"username":"first", "password":"123"}' -H "Content-Type: application/json" -i -X POST
 
-# POST
-curl localhost:8000/signin -i -X POST
+# Sign in
+
+# Sign out
 ```
