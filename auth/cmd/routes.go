@@ -11,8 +11,8 @@ func Routes(app *fiber.App) {
 		return c.Next()
 	})
 
-	v1.Get("/user/:id", handlers.UserProfile)
+	v1.Get("/user/vocab", handlers.GetVocabulary)
+	v1.Post("/user/add-vocab", handlers.AddVocabulary)
 	v1.Post("/signup", handlers.Signup)
 	v1.Post("/signin", handlers.Signin)
-	v1.Post("/signout", handlers.Signout)
 }

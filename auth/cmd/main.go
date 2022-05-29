@@ -7,6 +7,7 @@ import (
 
 	"database/sql"
 
+	// "github.com/firstneverrest/auth/internal/handlers"
 	"github.com/firstneverrest/auth/internal/models"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gofiber/fiber/v2"
@@ -20,7 +21,7 @@ func main() {
 
 	err := godotenv.Load()
 	if err != nil {
-		panic("Error loading .env file")
+		log.Fatal("Error loading .env file")
 	}
 
 	port := os.Getenv("PORT")
@@ -41,6 +42,7 @@ func main() {
 
 	// middleware
 	CorsHandler(app)
+	// JwtWare("/user/:id/vocab", handlers.GetJWTSecret(), app)
 	Logger(app)
 
 	app.Listen(":" + port)
