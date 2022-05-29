@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -25,6 +24,16 @@ type SigninRequest struct {
 type AddVocabularyRequest struct {
 	Title   string `json:"title"`
 	Meaning string `json:"meaning"`
+}
+
+type EditVocabularyRequest struct {
+	Id      uint16 `json:"id"`
+	Title   string `json:"title"`
+	Meaning string `json:"meaning"`
+}
+
+type DeleteVocabularyRequest struct {
+	Id uint16 `json:"id"`
 }
 
 const jwtSecret = "mySecret"
@@ -63,7 +72,7 @@ func Signup(c *fiber.Ctx) error {
 	}
 
 	// create new table for users
-	query = "CREATE TABLE " + randomId + "_Vocabulary (Id NVARCHAR(13) NOT NULL, Title NVARCHAR(50), Meaning NVARCHAR(300), PRIMARY KEY (Id))"
+	query = "CREATE TABLE " + randomId + "_Vocabulary (Id INT UNSIGNED AUTO_INCREMENT NOT NULL, Title NVARCHAR(50), Meaning NVARCHAR(300), PRIMARY KEY (Id))"
 	_, err = models.DB.Query(query)
 	if err != nil {
 		return fiber.NewError(fiber.StatusUnprocessableEntity, err.Error())
@@ -116,11 +125,11 @@ func Signin(c *fiber.Ctx) error {
 	})
 }
 
-func GetVocabulary(c *fiber.Ctx) error {
+func getUserIdFromJWT(c *fiber.Ctx) (string, error) {
 	jwtUserToken := c.Get("Authorization")[7:]
 
 	if jwtUserToken == "" {
-		return fiber.NewError(fiber.StatusUnauthorized, "Unauthorized")
+		return "", fiber.NewError(fiber.StatusUnauthorized, "No token provided")
 	}
 
 	// parse JWT to claims
@@ -129,11 +138,37 @@ func GetVocabulary(c *fiber.Ctx) error {
 		return GetJWTSecret(), nil
 	})
 	if err != nil {
-		return fiber.NewError(fiber.StatusUnauthorized, "Unauthorized")
+		return "", fiber.NewError(fiber.StatusUnauthorized, "Unauthorized")
 	}
 
 	// get user id
 	userId := claims["id"].(string)
+	return userId, nil
+}
+
+func GetVocabulary(c *fiber.Ctx) error {
+	userId, err := getUserIdFromJWT(c)
+	if err != nil {
+		return err
+	}
+
+	// jwtUserToken := c.Get("Authorization")[7:]
+
+	// if jwtUserToken == "" {
+	// 	return fiber.NewError(fiber.StatusUnauthorized, "Unauthorized")
+	// }
+
+	// // parse JWT to claims
+	// claims := jwt.MapClaims{}
+	// _, err := jwt.ParseWithClaims(jwtUserToken, claims, func(token *jwt.Token) (interface{}, error) {
+	// 	return GetJWTSecret(), nil
+	// })
+	// if err != nil {
+	// 	return fiber.NewError(fiber.StatusUnauthorized, "Unauthorized")
+	// }
+
+	// // get user id
+	// userId := claims["id"].(string)
 
 	vocabulary := make([]*models.Vocabulary, 0)
 	query := "SELECT Id, Title, Meaning FROM " + userId + "_Vocabulary"
@@ -155,24 +190,10 @@ func GetVocabulary(c *fiber.Ctx) error {
 }
 
 func AddVocabulary(c *fiber.Ctx) error {
-	jwtUserToken := c.Get("Authorization")[7:]
-
-	if jwtUserToken == "" {
-		return fiber.NewError(fiber.StatusUnauthorized, "Unauthorized")
-	}
-
-	// parse JWT to claims
-	claims := jwt.MapClaims{}
-	_, err := jwt.ParseWithClaims(jwtUserToken, claims, func(token *jwt.Token) (interface{}, error) {
-		return GetJWTSecret(), nil
-	})
+	userId, err := getUserIdFromJWT(c)
 	if err != nil {
-		return fiber.NewError(fiber.StatusUnauthorized, "Unauthorized")
+		return err
 	}
-
-	// get user id
-	userId := claims["id"].(string)
-	fmt.Println(userId)
 
 	request := AddVocabularyRequest{}
 	err = c.BodyParser(&request)
@@ -185,10 +206,8 @@ func AddVocabulary(c *fiber.Ctx) error {
 	}
 
 	// add vocab to db
-	randomId := utils.RandStringBytes(13)
-	fmt.Println("passed")
-	query := "INSERT INTO " + userId + "_Vocabulary (Id, Title, Meaning) VALUES (?, ?, ?)"
-	_, err = models.DB.Query(query, randomId, request.Title, request.Meaning)
+	query := "INSERT INTO " + userId + "_Vocabulary (Title, Meaning) VALUES (?, ?)"
+	_, err = models.DB.Query(query, request.Title, request.Meaning)
 	if err != nil {
 		return fiber.NewError(fiber.StatusUnprocessableEntity, err.Error())
 	}
@@ -196,6 +215,68 @@ func AddVocabulary(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"msg": "Vocabulary added successfully",
 	})
+}
+
+func EditVocabulary(c *fiber.Ctx) error {
+	// get user id & verify jwt
+	userId, err := getUserIdFromJWT(c)
+	if err != nil {
+		return err
+	}
+
+	// handle request body
+	request := EditVocabularyRequest{}
+	err = c.BodyParser(&request)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	if request.Title == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Title and Meaning are required")
+	}
+
+	// sql edit vocab
+	query := "UPDATE " + userId + "_Vocabulary SET Title = ? , Meaning = ? WHERE Id = ?"
+	_, err = models.DB.Query(query, request.Title, request.Meaning, request.Id)
+	if err != nil {
+		return fiber.NewError(fiber.StatusUnprocessableEntity, err.Error())
+	}
+
+	// return response
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"msg":     "Vocabulary edited successfully",
+		"title":   request.Title,
+		"meaning": request.Meaning,
+	})
+}
+
+func DeleteVocabulary(c *fiber.Ctx) error {
+	// get user id & verify jwt
+	userId, err := getUserIdFromJWT(c)
+	if err != nil {
+		return err
+	}
+
+	// handle request body
+	request := EditVocabularyRequest{}
+	err = c.BodyParser(&request)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	// sql edit vocab
+	query := "DELETE FROM " + userId + "_Vocabulary WHERE Id = ?"
+	_, err = models.DB.Query(query, request.Id)
+	if err != nil {
+		return fiber.NewError(fiber.StatusUnprocessableEntity, err.Error())
+	}
+
+	// return response
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"msg": "Vocabulary deleted successfully",
+		"id":  request.Id,
+	})
+
 }
 
 func GetJWTSecret() []byte {

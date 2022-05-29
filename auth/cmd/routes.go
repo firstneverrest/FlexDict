@@ -13,6 +13,8 @@ func Routes(app *fiber.App) {
 
 	v1.Get("/user/vocab", handlers.GetVocabulary)
 	v1.Post("/user/add-vocab", handlers.AddVocabulary)
+	v1.Put("/user/edit-vocab", handlers.EditVocabulary)
+	v1.Delete("/user/delete-vocab", handlers.DeleteVocabulary)
 	v1.Post("/signup", handlers.Signup)
 	v1.Post("/signin", handlers.Signin)
 }
